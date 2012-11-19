@@ -1,0 +1,43 @@
+#!/bin/sh
+
+# DISK1 (movies)
+export DISK1=/mnt/HD_a2
+export DISK1MOUNT=/mnt/movies
+export DISTDIR=linux
+
+# DISK2 (tv)
+export DISK2=/mnt/HD_b2
+export DISK2MOUNT=/mnt/tv
+
+# USB (chroot)
+export DISKUSB=/mnt/HD_c1
+export DISKUSBMOUNT=/mnt/flash
+
+# Load usb kernel module and mount
+mkdir $DISKUSB
+insmod $DISK1/usb-storage.ko
+sleep 15
+mount -t ext3 /dev/sdc1 $DISKUSB
+
+cd $DISKUSB
+
+mount --bind $DISK1 $DISTDIR/$DISK1MOUNT
+mount --bind $DISK2 $DISTDIR/$DISK2MOUNT
+mount --bind $DISKUSB $DISTDIR/$DISKUSBMOUNT
+
+mount --bind / $DISTDIR/mnt/root
+mount --bind /dev $DISTDIR/dev
+mount --bind /sys  $DISTDIR/sys
+mount --bind /sys/crfs $DISTDIR/sys/crfs
+mount --bind /web $DISTDIR/web
+mount --bind /proc $DISTDIR/proc
+
+cp -f /proc/mounts $DISTDIR/etc/mtab
+rm -f $DISTDIR/etc/fstab
+touch $DISTDIR/etc/fstab
+cp -f /etc/resolv.conf $DISTDIR/etc
+hostname >$DISTDIR/etc/hostname
+cp -f /etc/hosts $DISTDIR/etc
+
+$DISKUSB/$DISTDIR/boot/chroot $DISKUSB/$DISTDIR /boot/linuxrc
+
